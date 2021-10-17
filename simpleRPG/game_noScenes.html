@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Tiled RPG</title>
+    <script src = "phaser.js"></script>
+    <style type="text/css">
+        body = {
+            margin: 0;
+        }
+    </style>
+</head>
+
+
+<body>
+<script type="text/javascript">
+
+var config = {
+    type:Phaser.Auto,
+    width: 640,
+    height: 640,
+    physics: {
+        default: 'arcade',
+        arcade: {
+            // gravity: {y:50},
+            debug:true
+        }
+    },
+    scene: {
+        preload:preload,
+        create: create,
+        update: update,
+    }
+};
+
+var game = new Phaser.Game(config);
+
+var chance = 10;
+var fighting = false;
+
+function preload(){
+    this.load.image('background', 'assets/background1.png');
+    this.load.spritesheet('player', 'assets/playerBasic.png', {frameWidth:32, frameHeight:32});
+    this.load.image('tiles', 'assets/tileSetBasic.png');
+    this.load.tilemapTiledJSON('map', 'assets/level_0_0.json');
+    this.load.image('lowRiskTile', 'assets/lowRiskTile.png');
+    this.load.image('highRiskTile', 'assets/highRiskTile.png');
+
+}
+
+function create(){
+    
+    const map = this.make.tilemap({key:'map'});
+    const tileset = map.addTilesetImage('basicTileset', 'tiles');
+
+    const pathways = map.createStaticLayer('WalkableTiles', tileset, 0,0);
+
+    const obstacles = map.createStaticLayer('ObstacleTiles', tileset, 0, 0);
+    obstacles.setCollisionByExclusion(-1, true);
+
+    this.player = this.physics.add.sprite(32, 610, 'player');
+
+    this.anims.create({
+        key:'run',
+        frames : this.anims.generateFrameNumbers('player', {start:0, end:2}),
+        frameRate : 10,
+        repeat: -1
+    })
+    this.anims.create({
+        key:'idle',
+        frames : this.anims.generateFrameNumbers('player', {start:0, end:0}),
+        frameRate : 10,
+
+    })
+    this.player.setCollideWorldBounds(true);
+    this.player.setBounce(0.1);
+
+    this.cursors = this.input.keyboard.createCursorKeys();
+
+    this.physics.add.collider(this.player, obstacles);
+    //establish low risk tiles
+    this.lowRiskTiles = this.physics.add.group({
+        allowGravity:  false,
+        immovable: true
+    });
+    const lowRiskTiles = map.getObjectLayer('LowRiskTiles')['objects'];
+    lowRiskTiles.forEach(riskObject => {
+        const tile = this.lowRiskTiles.create(riskObject.x, riskObject.y-32, 'lowRiskTile').setOrigin(0,0);
+        tile.body.setSize(tile.width-26, tile.height-26).setOffset(13,13);
+    })
+    this.physics.add.overlap(this.player, this.lowRiskTiles, lowCheckForFight, null, this);
+
+    
+    //establish high risk tiles
+    this.highRiskTiles = this.physics.add.group({
+        allowGravity:  false,
+        immovable: true
+    });
+    const highRiskTiles = map.getObjectLayer('HighRiskTiles')['objects'];
+    highRiskTiles.forEach(riskObject => {
+        const tile = this.highRiskTiles.create(riskObject.x, riskObject.y-32, 'highRiskTile').setOrigin(0,0);
+        tile.body.setSize(tile.width-26, tile.height-26).setOffset(13,13);
+    })
+    this.physics.add.overlap(this.player, this.highRiskTiles, highCheckForFight, null, this);
+
+
+}
+
+
+function update(){
+if (fighting === false){
+  if (this.cursors.left.isDown){
+    this.player.setVelocityX(-200);
+    if (this.player.body.onFloor()){
+      this.player.play('run',true);
+    }
+  } else if (this.cursors.right.isDown){
+    this.player.setVelocityX(200);
+    if (this.player.body.onFloor()){
+      this.player.play('run',true);
+    }
+ } else {
+   this.player.setVelocityX(0);
+   if (this.player.body.onFloor()){
+     this.player.play('idle',true);
+   }
+ }
+ 
+ if (this.cursors.up.isDown){
+    this.player.setVelocityY(-200);
+    if (this.player.body.onFloor()){
+      this.player.play('run',true);
+    }
+  } else if (this.cursors.down.isDown){
+    this.player.setVelocityY(200);
+    if (this.player.body.onFloor()){
+      this.player.play('run',true);
+    }
+ } else {
+   this.player.setVelocityY(0);
+   if (this.player.body.onFloor()){
+     this.player.play('idle',true);
+   }
+ }}
+ else {
+
+ }
+    
+}
+
+
+function lowCheckForFight(player, tile){
+    var odds = chance / 10;
+    console.log(chance);
+    if (player.body.velocity.x === 0 && player.body.velocity.y === 0){
+        console.log('passed')
+    }else if (odds > 100){
+        startFight(player);
+        chance = 0;
+    }
+    else{
+        chance+=1;
+    }
+}
+
+function highCheckForFight(player, tile){
+    var odds = chance / 10;
+    console.log(chance);
+    if (player.body.velocity.x === 0 && player.body.velocity.y === 0){
+        console.log('passed')
+    }else if (odds > 100){
+        startFight(player);
+        chance = 0;
+    }
+    else{
+        chance+=5;
+    }
+}
+
+function startFight(player){
+    console.log('Starting Fight');
+    player.setVelocityX(0);
+    player.setVelocityY(0);
+    fighting = true;
+}
+</script>    
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Tiled Platformer</title>
+    <script src = "phaser.js"></script>
+    <style type="text/css">
+        body = {
+            margin: 0;
+        }
+    </style>
+</head>
+
+
+<body>
+<script type="text/javascript">
+
+var config = {
+    type:Phaser.Auto,
+    width: 576,
+    height: 256,
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: {y:250},
+            debug: true
+        }
+    },
+    scene: {
+        preload:preload,
+        create: create,
+        update: update,
+    }
+};
+
+const game = new Phaser.Game(config);
+
+function preload(){
+    this.load.image('background' , 'assets/background1.png');
+    
+    this.load.spritesheet('player', 'assets/playerBasic.png', {frameWidth: 32, frameHeight: 32});
+
+    this.load.image('tiles', 'assets/tileSetBasic.png');
+    this.load.tilemapTiledJSON('map', 'assets/level1.json');
+}
+
+function create(){
+    const backgroundImage = this.add.image(0,0, 'background').setOrigin(0,0);
+    
+    const map = this.make.tilemap({key:'map'});
+    const tileset = map.addTilesetImage('BasicTiles', 'tiles');
+
+    const platforms = map.createStaticLayer('Platforms', tileset, 0 , 0);
+    platforms.setCollisionByExclusion(-1, true);
+    const backgroundTiles = map.createStaticLayer('BackgroundTiles', tileset, 0 , 0);
+
+    this.player = this.physics.add.sprite(16,32, 'player' );
+
+    this.anims.create({
+        key:'run',
+        frames : this.anims.generateFrameNumbers('player', {start:0, end:2}),
+        frameRate : 10,
+        repeat: -1
+    })
+    this.anims.create({
+        key:'idle',
+        frames : this.anims.generateFrameNumbers('player', {start:0, end:0}),
+        frameRate : 10,
+
+    })
+    this.player.setCollideWorldBounds(true);
+    this.player.setBounce(0.1);
+
+    this.cursors = this.input.keyboard.createCursorKeys();
+
+    this.physics.add.collider(this.player, platforms);
+}
+
+function update(){
+  if (this.cursors.left.isDown){
+    this.player.setVelocityX(-200);
+    if (this.player.body.onFloor()){
+      this.player.play('run',true);
+    }
+  } else if (this.cursors.right.isDown){
+    this.player.setVelocityX(200);
+    if (this.player.body.onFloor()){
+      this.player.play('run',true);
+    }
+ } else {
+   this.player.setVelocityX(0);
+   if (this.player.body.onFloor()){
+     this.player.play('idle',true);
+   }
+ }
+
+ if ((this.cursors.space.isDown || this.cursors.up.isDown) && this.player.body.onFloor()){
+   this.player.setVelocityY(-200);
+   this.player.play('run', true);
+ }
+
+ if (this.player.body.velocity.x > 0){
+   this.player.setFlipX(false);
+ } else if (this.player.body.velocity.x < 0){
+   this.player.setFlipX(true);
+ }
+    
+}
+</script>    
+</body>
+</html>
