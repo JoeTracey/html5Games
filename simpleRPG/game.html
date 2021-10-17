@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Simple RPG</title>
+    <script src = "phaser.js"></script>
+    <style type="text/css">
+        body = {
+            margin: 0;
+        }
+    </style>
+</head>
+
+
+<body>
+<script type="text/javascript">
+
+
+var sceneConfigA = {
+    key: 'mainMenu',
+    preload: preloadSceneA,
+    create: createSceneA,
+    update: updateSceneA,
+    // pack:{}
+};
+var sceneConfigB = {
+    key: 'mainScene',
+    preload: preloadSceneB,
+    create: createSceneB,
+    update: updateSceneB,
+    // pack:{}
+};
+
+
+var gameConfig = {
+    type: Phaser.Auto,
+    width : 256, 
+    height : 256,
+    physics : {
+        default: 'arcade',
+        debug : false,
+    },
+    scene: [ sceneConfigA, sceneConfigB ]
+};
+
+var game = new Phaser.Game(gameConfig);
+
+////////////////  Scene - A   /////////////////////////////////
+
+var buttons;
+var buttonMap = new Map();
+var activeButton = '0';
+
+var keyA;
+var keyS;
+var keyD;
+var keyW;
+var keySpace;
+var keyEnter;
+
+var buttonReleased = true;
+
+var Scene;
+
+function preloadSceneA(){
+    this.load.image('menuBackground', './assets/menuBackground.png');
+    this.load.image('notSelectedMenu', './assets/notSelectedMainMenu.png');
+    this.load.image('selectedMenu', './assets/selectedMainMenu.png');
+}
+
+function createSceneA(){
+    this.add.image(128, 128, 'menuBackground');
+
+    buttons = this.physics.add.staticGroup();
+    var buttonA = buttons.create(128, 55, 'selectedMenu');
+    var buttonB = buttons.create(128, 128, 'notSelectedMenu');
+    var buttonC = buttons.create(128, 195, 'notSelectedMenu');
+
+    var buttonAText = this.add.text(128,55, 'Option-1' , {fontSize: '16px',  boundsAlignH: "center", boundsAlignV: "middle" }).setOrigin(0.5)
+    buttonAText.setTint(0xff0000)
+    var buttonBText = this.add.text(128,128, 'Option-2' , {fontSize: '16px',  boundsAlignH: "center", boundsAlignV: "middle" }).setOrigin(0.5)
+    buttonBText.setTint(0x000000)
+    var buttonCText = this.add.text(128,195, 'Play Game' , {fontSize: '16px',  boundsAlignH: "center", boundsAlignV: "middle" }).setOrigin(0.5)
+    buttonCText.setTint(0x000000)
+    console.log(buttonAText)
+    console.log(buttonBText)
+
+    buttonMap.set('0', {'button': buttonA, 'x': buttonA.x, 'y': buttonA.y, 'above': '2', 'below': '1', 'left':'none', 'right':'none', 'text': buttonAText, 'function': pass});
+    buttonMap.set('1', {'button': buttonB, 'x': buttonB.x, 'y': buttonB.y, 'above': '0', 'below': '2', 'left':'none', 'right':'none', 'text': buttonBText, 'function': pass});
+    buttonMap.set('2', {'button': buttonC, 'x': buttonC.x, 'y': buttonC.y, 'above': '1', 'below': '0', 'left':'none', 'right':'none', 'text': buttonCText, 'function': play});
+
+    //add cursor
+    cursors = this.input.keyboard.createCursorKeys();
+    //add wasd to cursor
+    keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+    keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+    keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+    keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+    keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    keyEnter = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+    console.log(this);
+
+    Scene = this;
+
+
+}
+
+function updateSceneA(){
+    
+    // if (cursors.left.isDown || keyA.isDown){
+    //     pass
+    // }
+    // else if (cursors.right.isDown || keyD.isDown){
+    //     pass
+    // }
+    // else{
+    //     pass
+    // }
+    if (cursors.down.isDown || keyS.isDown){
+        changeButton('below');
+    }
+    else if (cursors.up.isDown || keyW.isDown){
+        changeButton('above');
+        
+    }
+    else if (keySpace.isDown || keyEnter.isDown){
+        // console.log('space')
+        pressButton();
+        
+    }
+    else{
+        buttonReleased = true;
+    }
+    
+}
+
+function changeButton(value){
+    var cur  = buttonMap.get(activeButton)['button'];
+    var dest = buttonMap.get(activeButton)[value];
+    if (dest != 'none' & buttonReleased){
+        buttonReleased = false;
+        cur.setTexture('notSelectedMenu');
+        buttonMap.get(activeButton)['text'].setTint('0x000000')
+        activeButton = dest;
+        buttonMap.get(activeButton)['button'].setTexture('selectedMenu');
+        buttonMap.get(activeButton)['text'].setTint('0xff0000')
+    }
+}
+
+function pressButton(){
+    if (buttonReleased){
+    console.log('button press')
+    buttonMap.get(activeButton)['function']();
+    buttonReleased = false;}
+}
+
+function play(){
+    console.log('play');
+    var scene  = game.scene;
+    Scene.scene.switch('mainScene');
+}
+
+
+function pass(){
+
+}
+
+///////////////////    Scene - B    ////////////////////////////////
+
+var player;
+var shield;
+var sword;
+var statDetails = new Map();
+var enemies;
+
+function preloadSceneB(){
+    this.load.image('genericBackground', './assets/genericPath.png');
+    this.load.image('man', './assets/man.png');
+    this.load.image('shield', './assets/shield.png');
+    this.load.image('sword', './assets/sword.png');
+    this.load.image('enemy', './assets/enemyBlock.png');
+    this.load.image('arrows', './assets/arrows.png');
+}
+
+function createSceneB(){
+    this.add.image(128, 128, 'genericBackground');
+
+
+    //create player
+    player = this.physics.add.image(20,450, 'man');
+    player.setCollideWorldBounds(true);
+    player.setDepth(2);
+
+    statDetails.set('player', {'level': 1, 'hp':10, 'baseDamage':5, 'defence':2});
+    statDetails.set('enemy', {'level': 1, 'hp':8, 'baseDamage':4, 'defence':1});
+    console.log(statDetails)
+
+    // distribute enemies
+    enemies = this.physics.add.group();
+    var col = this.physics.add.collider(player, enemies, startBattle);
+    col.overlapOnly = true;
+    var enemy = enemies.create(128,128, 'enemy').setDepth(1)
+
+    //add cursor
+    cursors = this.input.keyboard.createCursorKeys();
+    //add wasd to cursor
+    keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+    keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+    keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+    keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+    keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    keyEnter = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+
+}
+
+function updateSceneB(){
+    
+    if (cursors.left.isDown || keyA.isDown){
+        player.setVelocityX(-150);
+    }
+    else if (cursors.right.isDown || keyD.isDown){
+        player.setVelocityX(150);
+    }
+    else{
+        player.setVelocityX(0);
+    }
+    if (cursors.down.isDown || keyS.isDown){
+        player.setVelocityY(80);
+    }
+    else if (cursors.up.isDown || keyW.isDown){
+        player.setVelocityY(-80);
+    }
+    else{
+        player.setVelocityY(0);
+    }
+    
+}
+
+
+///////////////////    Scene - C    ////////////////////////////////
+
+function preloadSceneC(){
+
+}
+
+
+function createSceneC(){
+
+}
+
+
+function updateSceneC(){
+
+}
+
+function startBattle(){
+
+}
+
+</script>    
+</body>
+</html>
