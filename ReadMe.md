@@ -1,10 +1,22 @@
 # HTML5 Games
 
-**A compilation of a few html5 games, built for fun as a side project.**
+**A compilation of a few simple html5 games, built for fun as a side project.**
 
+## How to use
+**Host a local server in the repository containing the game folders.**
+**You may use the following command to use Pythons http server:** 
+python -m http.server 8008
+
+**Then connect to the local server which this hosts via the following html link:**
+http://localhost:8008/
+
+**Now simply navigate to the *game.html* file to play**
 
 ## DogShooter
-A bullet hell style game where you play as my dog, 'Meeka', to bark at cats in an attempt to get to the end of the level safely. Grab bones or tennis balls for powerups and beat the boss cat at the end to win.
+A vertical scrolling shooter, where you play as my dog, 'Meeka', to bark at cats in an attempt to get to the end of the level safely. Grab bones or tennis balls for powerups and beat the boss cat at the end to win.
+![](/images/Shooter1.png)
+![](/images/Shooter2.png)
+![](/images/Shooter3.png)
 
 ## DogFarm
 The skeleton for a farming simulator, where various seeds may be sewn for different buy/sell prices with different grow times. The player needs to equip tools to harvest and seeds to sew.
