@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+ 
 <head>
     <meta charset="UTF-8" />
     <title>Dog Shooter</title>
@@ -13,7 +14,7 @@
 
 <body>
 <script type="text/javascript">
-
+//configure game scene to use Phaser under desired resolution and scene functions
 var config = {
     type:Phaser.Auto,
     width: 500,
@@ -32,61 +33,54 @@ var config = {
     }
 };
 
+
+// initialize all game objects ahead of time
 var game = new Phaser.Game(config);
-var cursors;
+var cursors; //object handles keyboard input
 var spawnRate = 0; // set back to 0
-var spawnDelay = 100.0;
-var spawnCount = 0;
-var spawnTimer = 0;
-var catSpeed = 100;
-var score = 0;
-var bossTick = 0; //set back to 0 
+var spawnDelay = 100.0; //starting value for enemy spawn delay
+var spawnCount = 0; //zero value for enemies spawned so far
+var spawnTimer = 0; //tracks time since last enemy spawn
+var catSpeed = 100; //speed cats move at
+var score = 0; //points scored
+var bossTick = 0; //counts up to boss spawning
 
-var bossScene = false;
+var bossScene = false; //cats don't spawn during the bossScene
 
-var playerEnergy = 0
-var playerEnergyText;
+var playerEnergy = 0 //shots require 100 enemy
+var playerEnergyText; //energy display text, to be replaced with a bar during future update
 
-var gameOver = false;
+var gameOver = false; //triggers if player dies
 var gameOverText;
 
-var spawnRateText;
-var spawnTimerText;
-var scoreText;
+var scoreText; //displays current score
 
-var background;  //
-var player;  //
-var cats; //
-var walls; //
-var barks;
-var enemyBarks;
-var bosses;
-var bullets; // bullets shot, shift hue to indicate enemy? use different sprite eventually
-            // dog should bark sound waves, maybe a charged larger sound wave
-            //      should be slow and powerful
-            // Cats should mostly be melee, especially to start
-            // Mailman shoots mail
-            //  skinny mailman shooting mail straight forward
-            //  fat mailman shooting in direction of player
-// Later on
-// Xp, health, damage, attack speed, power ups/ learned abilities, bosses or additional levels
-    //puppies followin as autoturrets, player looks more badass as XP is gained (if xp stays between plays)
-var balls;
-var kibbles;
-var bones;
-var beefs;
+var background;  //stores background animation
+var player;  //player character
+var cats; //enemy
+var walls; //player boundaries
+var barks; //playerbullets
+var enemyBarks; //enemy bullets
+var bosses; //contains boss object
+// var bullets;  //instance of 
+var balls; //triple shot
+var kibbles; //extra score
+var bones; //spread shot
+var beefs; //extra lives
 
-var playerHealth = 0;
-var healthTokens;
-var attackType = 'basic';
-var playerPowerCharge=0;
+var playerHealth = 0; //placeholder for health
+var healthTokens; //meat pngs to display lives
+var attackType = 'basic'; //start player with basic attach
+var playerPowerCharge=0; //placeholder for number of special shots left
 
+var scene; //holds local scene
 
+// Preloads all necessary assets
 function preload(){
+    //load animated sprites
     this.load.spritesheet('background', 'assets/temp/backgroundFrames.png', {frameWidth: 500, frameHeight: 600})
-    // this.load.image('player', 'assets/temp/dog.png')
     this.load.spritesheet('player', 'assets/temp/dogFrames.png', {frameWidth: 32, frameHeight: 60});
-
+    //load static images
     this.load.image('cat', 'assets/temp/cat.png')
     this.load.image('bark', 'assets/temp/bark.png')
     this.load.image('boss', 'assets/temp/boss1.png')
@@ -95,10 +89,11 @@ function preload(){
     this.load.image('bone', 'assets/temp/bone.png')
     this.load.image('beef', 'assets/temp/beef.png')
     this.load.image('hairBall', 'assets/temp/hairBall.png')
-
 }
 
+//initialize the game enviornment, only called once
 function create(){
+    //add and animate background
     background = this.add.sprite(250, 300, 'background')
     this.anims.create({
         key: 'scrolling',
@@ -108,7 +103,7 @@ function create(){
     });
     background.anims.play('scrolling', true)
     //create player as animation
-    player = this.physics.add.sprite(250, 500,'player') //use sprite not image when animating
+    player = this.physics.add.sprite(250, 500,'player')
     player.setCollideWorldBounds(true);
     this.anims.create({
         key: 'running',
@@ -116,20 +111,16 @@ function create(){
         frameRate: 10,
         repeat: -1
     });
-    console.log(player)
-    console.log(player.anims)
     player.anims.play('running', true);
     //create keyboard input
-    cursors = this.input.keyboard.createCursorKeys();
-    // create cat
+    cursors = this.input.keyboard.createCursorKeys(); //Allows for arrow keys and space bar to be detected
+    // create instance of enemy cat object
     cats = this.physics.add.group();
     this.physics.add.collider(player, cats, playerHitCat, null, this);
     // create overlay texts
-    // spawnRateText = this.add.text(16,16, 'spawnDelay: '+spawnDelay, {fontSize: '32px', fill: '#000'});
-    // spawnTimerText = this.add.text(16,48, 'spawnTimer: '+spawnTimer, {fontSize: '32px', fill: '#000'});
     scoreText = this.add.text(16,16, 'score: '+score, {fontSize: '32px', fill: '#000'});
     playerEnergyText = this.add.text(16,500, 'Energy: '+playerEnergy, {fontSize: '32px', fill: '#000'});
-    // create bark attack
+    // create bark attack 
     barks = this.physics.add.group();
     this.physics.add.collider(barks, cats, attackHitCat, null, this);
     enemyBarks = this.physics.add.group();
@@ -147,8 +138,7 @@ function create(){
     this.physics.add.collider(player, bones, collectBone, null, this);
     beefs = this.physics.add.group();
     this.physics.add.collider(player, beefs, collectBeef, null, this);
-
-    // healthText = this.add.text(16, 550, 'Health: '+ playerHealth, {fontSize: '32px', fill: '#000'});
+    //create group to store static healthTokens
     healthTokens = this.physics.add.staticGroup();
     // create 7 tokens, hidden
     healthTokens.create(16, 590, 'beef').visible = false
@@ -158,13 +148,18 @@ function create(){
     healthTokens.create(144, 590, 'beef').visible = false
     healthTokens.create(176, 590, 'beef').visible = false
     healthTokens.create(208, 590, 'beef').visible = false
+    // Activate players starting 3 health
     increaseHealth();
     increaseHealth();
     increaseHealth();
+    // allow scene to be accesed from anywhere in global variable
+    scene = this;
 
 }
 
+// Update called regularly by the game multiple times per second
 function update(){
+    //Check for player keyboard inputs in X-axis
     if (cursors.left.isDown){
         player.setVelocityX(-150);
     }
@@ -174,6 +169,7 @@ function update(){
     else{
         player.setVelocityX(0);
     }
+    //Check for player keyboard inputs in Y-axis
     if (cursors.down.isDown){
         player.setVelocityY(80);
     }
@@ -183,10 +179,11 @@ function update(){
     else{
         player.setVelocityY(0);
     }
-
+    //Check for player keyboard inputs on trigger
     if (cursors.space.isDown){
         simpleAttack(player);
     }
+    //prevents player from shooting again without releasing trigger
     else{
         releaseAttack();
     }
@@ -197,7 +194,7 @@ function update(){
 
 
 
-    //Spawn if enough time has passed
+    //Spawn enemy if enough time has passed
     if (spawnTimer >= spawnDelay-spawnRate & !gameOver & !bossScene){
         spawnCat();
         spawnTimer = 0;
@@ -208,31 +205,32 @@ function update(){
         else{
         bossTick +=1;
         }
-        // spawnRateText.setText('spawnRate: '+spawnRate);
-        // spawnTimerText.setText('spawnTimer: '+spawnTimer);
 
     }
+    // Start boss scene if conditions are met
     if (bossTick === 100 & ! bossScene){
         spawnBoss();
         bossScene = true;
     }
+    //otherwise progress spawnTimer
     else {
         spawnTimer +=(1);
-        // spawnTimerText.setText('spawnTimer: '+spawnTimer);
     }
+    //update boss
     if (bossScene){
         bosses.children.iterate(function(boss){
+        //Reverse boss if it reaches too close to wall using boolean boss.direction
         if (boss.x >  400){
-            // boss.setVelocityX (-50);
             boss.direction = false;
         }
         else if (boss.x <  100){
-            // boss.setVelocityX (50);
             boss.direction = true;
         }
         boss.setVelocityY(0);
-
-        if(Phaser.Math.Between(0,30) <1 & !gameOver){bossAttack(boss);}
+        //Boss shoots randomly averaging 1 per 30 updates
+        if(Phaser.Math.Between(0,30) <1 & !gameOver)
+            {bossAttack(boss);}
+        //Move boss one pixel per update call
         if (boss.direction){
             boss.x+=1;
         }
@@ -244,23 +242,29 @@ function update(){
     
 }
 
+//Generates an enemy to move down(y-) at a fixed speed at a random x location
 function spawnCat(){
     var x = Phaser.Math.Between(0, 500);
     var cat = cats.create(x,0, 'cat');
     cat.setVelocityY(catSpeed);
 }
 
+//Destroy cat and hurt player upon collision, no loot dropped
 function playerHitCat(player, cat){
     cat.disableBody(true, true);
     decreaseHealth();
 }
 
+//Destroy cat's hit with barks
 function attackHitCat(attack, cat){
     cat.disableBody(true, true);
+    //removes bullet
     attack.disableBody(true, true);
     score+=10;
     scoreText.setText('Score: '+score);
+    //random value x to determine if loot is dropped
     var x = Phaser.Math.Between(0,16);
+    //determine loot type based on value, most likely to spawn no loot
     if (x ==0){
         spawnBall(cat);
     }
@@ -275,17 +279,20 @@ function attackHitCat(attack, cat){
     }
 }
 
+// Player damages boss
 function attackHitBoss(attack, boss){
-    // boss.disableBody(true, true);
+    //removes bullet
     attack.disableBody(true, true);
     score+=10;
     scoreText.setText('Score: '+score);
     console.log('hit bosss')
+    //destroy boss if no health left
     if (boss.health < 1){
     boss.disableBody(true, true);
     gameOverText = this.add.text(50,300, 'You Win!!!!', {fontSize: '64px', fill: 0xff0000});
     gameOver = true;
     }
+    //otherwise apply damage
     else{
         boss.health -=1;
     }
@@ -295,15 +302,18 @@ function simpleAttack (player){
     //find player location and shoot out a bark
     var x = player.x;
     var y = player.y;
+    //return to basic attack if no special attacks left
     if (playerPowerCharge === 0){
         attackType = 'basic';
     }
+    //use basic attack, costs energy
     if (attackReleased & playerEnergy > 100 & attackType === 'basic'){
     var bark = barks.create(x,y,'bark');
     bark.setVelocityY(-200);
     playerEnergy-= 100;
     console.log('attacked - basic');
     }
+    // shoot a wide spread special attack at cost of a power charge
     else if (attackReleased & attackType === 'wide'){
         playerPowerCharge -=1;
         var bark = barks.create(x,y,'bark');
@@ -314,6 +324,7 @@ function simpleAttack (player){
         bark.setVelocityY(-200);
         console.log('attacked - wide');
     }
+    // shoot a clustered multishot special attack at cost of a power charge
     else if (attackReleased & attackType === 'multi'){
         playerPowerCharge -=1;
         var bark = barks.create(x,y,'bark');
@@ -326,10 +337,11 @@ function simpleAttack (player){
         bark.setVelocityX(200);
         console.log('attacked - wide');
     }
+    //ensure attack must be released to shoot again, preventing accidental rapid fire
     attackReleased = false;
 }
 
-
+// Boss fires hairball from center when called
 function bossAttack (boss){
     //find player location and shoot out a bark
     if (attackReleased & playerEnergy > 100){
@@ -340,11 +352,14 @@ function bossAttack (boss){
     }
 }
 
+//called when player has released the trigger, preventing rapidfire
 function releaseAttack(){
 attackReleased = true;
 }
 
+//Spawns boss at end of stage
 function spawnBoss(){
+    //Spawn a final wave of cats to protect boss
     spawnCat();
     spawnCat();
     spawnCat();
@@ -357,82 +372,80 @@ function spawnBoss(){
     spawnCat();
     spawnCat();
     spawnCat();
-    var x = Phaser.Math.Between(0, 500);
+    //Spawn at the center top of screen
     var boss = bosses.create(250,80, 'boss');
     boss.health = 10;
-    // boss.setVelocityX(50);
     boss.direction = true;
 
 
 }
 
 
-
+//spawns a ball (clustered multishot) powerup
 function spawnBall(body){
     var x=body.x;
     var y = body.y;
     var ball = balls.create(x,y, 'ball');
     ball.setVelocityY(catSpeed);
 }
+//player pickup ball power
 function collectBall(player, ball){
     ball.disableBody(true, true);
     attackType = 'wide';
     playerPowerCharge = 10;
 }
 
+//spawns a kibble item drop
 function spawnKibble(body){
     var x=body.x;
     var y = body.y;
     var kibble = kibbles.create(x,y, 'kibble');
     kibble.setVelocityY(catSpeed);
 }
+//give player points for pickup
 function collectKibble(player, kibble){
     kibble.disableBody(true, true);
-    // attackType = 'wide';
-    // playerPowerCharge = 10;
     score+=50;
     scoreText.setText('Score: '+score);
 }
 
+//spawn a bone (spreadshot) powerup
 function spawnBone(body){
     var x=body.x;
     var y = body.y;
     var bone = bones.create(x,y, 'bone');
     bone.setVelocityY(catSpeed);
 }
+//player picks up bone powerup
 function collectBone(player, bone){
     bone.disableBody(true, true);
     attackType = 'multi';
     playerPowerCharge = 10;
 }
 
+//spawns a beef (extra health) powerup
 function spawnBeef(body){
     var x=body.x;
     var y = body.y;
     var beef = beefs.create(x,y, 'beef');
     beef.setVelocityY(catSpeed);
 }
+//increase player health on pickup
 function collectBeef(player, ball){
     ball.disableBody(true, true);
     increaseHealth();
 }
 
+//increases value of player health and makes next health token visible
 function increaseHealth(){
     if (playerHealth < 7){
     playerHealth +=1;
-    console.log(playerHealth);
-    console.log(healthTokens.children);
-    console.log(healthTokens.children.entries);
-    console.log(healthTokens.children.entries[playerHealth]);
     token = healthTokens.children.entries[playerHealth-1];
-    // token.y = 570; 
     token.visible = true
-    // healthTokens.children.get(playerHealth).enableBody(true, playerHealth*16, 570, true, true);
 }
 }
+//removes one health from value and makes health token invisible. End game if no health left
 function decreaseHealth(){
-    // healthTokens.children.get(playerHealth).disableBody(true, true);
-
     token = healthTokens.children.entries[playerHealth-1];
     token.visible = false
     playerHealth -=1;
@@ -440,14 +453,11 @@ function decreaseHealth(){
         gameIsOver();
     } }
 
-
+//Game over called when player dies
 function gameIsOver(){
-    // player.setTint(0xffffff);
-    // this.physics.pause();
+    gameOverText = scene.add.text(50,300, 'Game Over', {fontSize: '64px', fill: 0xff0000});
     gameOver = true;
-    gameOverText = this.add.text(50,300, 'Game Over', {fontSize: '64px', fill: 0xff0000});
-    playerHealth +=1;
-    healthText.setText('Health: '+ 0);
+    scene.scene.pause()
 }
     
 
